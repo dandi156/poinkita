@@ -241,7 +241,7 @@
     <input id="dana" inputmode="numeric" placeholder="Nomor DANA (08xxxx)">
     <button class="btn btn-gold" id="btn-wd">Ajukan Penarikan</button>
     <div class="msg" id="msg-wd"></div>
-    <p class="small">Diproses manual oleh admin, maks 1x24 jam hari kerja. Batas penarikan naik sesuai hari check-in: 1 hari Rp50, 2 hari Rp200, 3 hari Rp500, 4 hari Rp2.000, <b>5 hari: SEMUA saldo kebuka</b> — tarik berapapun tanpa batas.</p>
+    <p class="small">Diproses manual oleh admin, maks 1x24 jam hari kerja. Batas penarikan naik sesuai hari check-in: 1 hari Rp50, 2 hari Rp500, 4 hari Rp2.000, <b>5 hari: SEMUA saldo kebuka</b> — tarik berapapun tanpa batas. Penarikan Rp50 maksimal 1x sehari.</p>
   </div>
   </div>
   </div>
@@ -318,7 +318,7 @@
     if (!box) return;
     box.innerHTML = "";
     if (!S) return;
-    const opts = [50, 50000, 100000];
+    const opts = [50, 500, 50000, 100000];
     opts.forEach(v => {
       const afford = v <= S.p;
       const c = document.createElement("button");
