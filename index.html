@@ -18,6 +18,9 @@
               box-shadow:0 0 0 4px rgba(245,185,33,.18), 0 4px 14px rgba(0,0,0,.45); }
   .head h1 { font-size:20px; }
   .head p { font-size:13px; color:#9fd8c0; }
+  .machine.mj { border-color:#d64541; box-shadow:inset 0 0 24px rgba(0,0,0,.55), 0 0 18px rgba(214,69,65,.22); }
+  .mj-marquee { color:#ff9d9a !important; }
+  .reel.tile { background:linear-gradient(180deg, #fffdf4, #efe4c4); border-color:#d8c690; }
   .card { background:linear-gradient(180deg, #0e4130, #082a1f); border:1px solid #1d6c47;
           border-radius:20px; padding:18px; margin-bottom:16px;
           box-shadow:0 12px 28px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
@@ -120,7 +123,7 @@
     <h2>👋 Satu langkah lagi</h2>
     <p class="small" style="font-size:14px">Kamu lagi buka aplikasi dari <b>link langsung</b>. Di mode ini Telegram gak ngirim data saldo kamu, jadi tombol-tombolnya mati.</p>
     <p class="small" style="font-size:14px">Buka lewat chat bot, terus pencet tombol besar <b>🌐 Buka Aplikasi</b> di bagian bawah chat — di situ saldo &amp; semua tombolnya jalan 👇</p>
-    <a class="btn btn-gold" href="https://t.me/PoinKitaBot" style="display:block; text-align:center; text-decoration:none;">💬 Buka Chat Bot</a>
+    <a class="btn btn-gold" id="btn-gotochat" href="https://t.me/PoinKitaBot" style="display:block; text-align:center; text-decoration:none;">💬 Buka Chat Bot</a>
     <p class="small" id="gate-diag"></p>
   </div>
 
@@ -179,6 +182,7 @@
     4️⃣ Tonton iklan video: +5 poin/video (maks 5x/hari)<br>
     5️⃣ Spin harian gratis: 3x/hari, JACKPOT 7️⃣7️⃣7️⃣ = +10.000 poin<br>
     6️⃣ Roda Bonus 1x/hari (sampai +100) & Tebak Dadu 3x/hari (+8 kalau bener)<br>
+    🀄 Mahjong gratis 3x/hari — JACKPOT 🀄🀄🀄 = +10.000 poin<br>
     7️⃣ Tarik ke DANA — batasnya naik tiap hari check-in (Rp50 → semua saldo di hari ke-5).<br>
     🎁 Bonus gabung: +50 poin pas pertama kali gabung (sekali aja).</p>
   </div>
@@ -214,6 +218,26 @@
     <p class="small">Gratis 3x sehari, <b>tanpa pasang poin</b>. Kehabisan spin? Dapetin 🎟️ <b>spin ekstra</b>: nonton iklan 🎬 atau selesaiin tugas sponsor 📺, +1 spin tiap kali. Animasi di sini cuma pemanis — undian resminya jalan di server bot dan hasilnya dikirim ke chat.</p>
   </div>
 
+  <div class="card">
+    <h2>🀄 Mahjong Ways</h2>
+    <div class="machine mj">
+      <div class="lights"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <p class="marquee mj-marquee">🀄 MAHJONG 🀄</p>
+      <div class="reels">
+        <div class="reel tile" id="mjr0">🀄</div>
+        <div class="reel tile" id="mjr1">🀅</div>
+        <div class="reel tile" id="mjr2">🀀</div>
+      </div>
+      <div class="msg ok" id="mj-bigwin" style="display:none; font-size:19px;">🀄🀄🀄 MAHJONG!</div>
+    </div>
+    <div class="row"><span>🀄🀄🀄 Naga merah x3 — JACKPOT</span><b>+10.000 poin</b></div>
+    <div class="row"><span>Tiga ubin sama lainnya</span><b>+25–100 poin</b></div>
+    <div class="row"><span>Sepasang ubin</span><b>+5 poin</b></div>
+    <div class="row"><span>Gratis</span><b>3x/hari</b></div>
+    <button class="btn btn-gold btn-big" id="btn-mj">🀄 Putar Mahjong</button>
+    <div class="msg" id="msg-mj"></div>
+    <p class="small">Mahjong versi gratis ala Mahjong Ways — tanpa taruhan, tanpa pasang poin. Hasil resmi diundi server & dikirim bot di chat; animasi ubin cuma tampilan.</p>
+  </div>
   <div class="card">
     <h2>🎡 Roda Bonus</h2>
     <div class="wheelpin">🔻</div>
@@ -492,6 +516,51 @@
       setTimeout(() => { $("btn-spin").disabled = false; }, 1200);
     }, 1450);
   };
+
+  const MJ_SYMS = ["🀉", "🀈", "🀇", "🀀", "🀅", "🀄"];
+  let mjSpinning = false;
+  $("btn-mj").onclick = () => {
+    if (mjSpinning) return;
+    mjSpinning = true;
+    $("btn-mj").disabled = true;
+    $("mj-bigwin").style.display = "none";
+    const reels = [$("mjr0"), $("mjr1"), $("mjr2")];
+    const stops = [650, 950, 1250];
+    const finals = reels.map(() => MJ_SYMS[Math.floor(Math.random() * MJ_SYMS.length)]);
+    reels.forEach((r, i) => {
+      r.classList.add("spinning");
+      const iv = setInterval(() => { r.textContent = MJ_SYMS[Math.floor(Math.random() * MJ_SYMS.length)]; }, 70);
+      setTimeout(() => {
+        clearInterval(iv);
+        r.textContent = finals[i];
+        r.classList.remove("spinning");
+        r.classList.remove("stopbounce"); void r.offsetWidth; r.classList.add("stopbounce");
+        if (i === 2) {
+          mjSpinning = false;
+          $("btn-mj").disabled = false;
+          if (finals[0] === finals[1] && finals[1] === finals[2]) {
+            const bw = $("mj-bigwin");
+            bw.style.display = "block";
+            coinBurst();
+            setTimeout(() => bw.style.display = "none", 2600);
+          }
+        }
+      }, stops[i]);
+    });
+    // Hasil resmi diundi & diputuskan bot (server-side), animasi di sini cuma pemanis.
+    setTimeout(() => tg.sendData(JSON.stringify({ a: "mahjong" })), 1350);
+    $("msg-mj").textContent = "🎲 Undian jalan di server — hasil resminya bot kirim di chat ya!";
+  };
+
+  // Tombol gerbang "Buka Chat Bot": link biasa sering macet di WebView Telegram,
+  // jadi pakai openTelegramLink (cara resmi) kalau tersedia.
+  const gc = $("btn-gotochat");
+  if (gc) gc.addEventListener("click", (e) => {
+    if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink) {
+      e.preventDefault();
+      Telegram.WebApp.openTelegramLink("https://t.me/PoinKitaBot");
+    }
+  });
 
   let wheelRot = 0;
   $("btn-wheel").onclick = () => {
