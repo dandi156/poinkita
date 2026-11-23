@@ -128,7 +128,7 @@
     if (!box) return;
     box.innerHTML = "";
     if (!S) return;
-    const opts = [50, 100, 500, 1000, 5000];
+    const opts = [50, 50000, 100000];
     opts.forEach(v => {
       if (v > S.p) return;
       const c = document.createElement("button");
