@@ -216,6 +216,26 @@
     if (navigator.clipboard) navigator.clipboard.writeText(t);
     tg.showAlert("Link disalin:\n" + t);
   };
+  // AdsGram SDK nyari "launch params" Telegram di URL/sessionStorage — di sebagian
+  // HP params itu gak nempel di URL. Kalau bridge Telegram (tg.initData) punya datanya,
+  // kita simpen sendiri ke sessionStorage persis di format yang SDK-nya baca.
+  function stashLaunchParams() {
+    try {
+      if (sessionStorage.getItem("adsgram/launch-params")) return;
+      const w = window.Telegram && window.Telegram.WebApp;
+      if (!w || !w.initData) return;
+      const p = new URLSearchParams();
+      p.set("tgWebAppData", w.initData);
+      p.set("tgWebAppPlatform", w.platform || "android");
+      p.set("tgWebAppVersion", w.version || "8.0");
+      p.set("tgWebAppThemeParams", JSON.stringify(w.themeParams || {}));
+      const sp = w.initDataUnsafe && w.initDataUnsafe.start_param;
+      if (sp) p.set("tgWebAppStartParam", sp);
+      sessionStorage.setItem("adsgram/launch-params", JSON.stringify(p.toString()));
+    } catch (e) {}
+  }
+  stashLaunchParams();
+
   let AdController = null;
   let adsLoading = null;
   function loadAdsSdk() {
@@ -241,6 +261,7 @@
       return " (cek: initData " + idl + ", hash " + (hh ? "ada" : "kosong") + ", via " + (tg.platform || "?") + ")";
     };
     try {
+      stashLaunchParams();
       await loadAdsSdk();
       if (!AdController) AdController = window.Adsgram.init({ blockId: "61523" });
     } catch (e) {
