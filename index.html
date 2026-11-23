@@ -155,7 +155,7 @@
 
   <div class="card">
     <h2>👥 Undang Teman</h2>
-    <div class="row"><span>Per teman gabung</span><b>+500 poin</b></div>
+    <div class="row"><span>Per teman gabung</span><b>+1.000 poin</b></div>
     <div class="row"><span>Teman yang udah gabung</span><b id="refcount">–</b></div>
     <div class="row"><span>🎁 Bonus 30 teman</span><b>+30.000 poin</b></div>
     <div class="row"><span>🎁 Bonus 50 teman</span><b>+50.000 poin</b></div>
@@ -179,7 +179,7 @@
   <div class="card">
     <h2>ℹ️ Cara Dapat Poin</h2>
     <p class="small">1️⃣ Check-in tiap hari: +20 poin<br>
-    2️⃣ Undang teman pakai link kamu: +500 poin/orang (bonus 30 teman +30.000, 50 teman +50.000)<br>
+    2️⃣ Undang teman pakai link kamu: +1.000 poin/orang (bonus 30 teman +30.000, 50 teman +50.000)<br>
     3️⃣ Tugas sponsor: +poin per tugas<br>
     4️⃣ Tonton iklan video: +5 poin/video (maks 5x/hari)<br>
     5️⃣ Spin harian gratis: 3x/hari, JACKPOT 7️⃣7️⃣7️⃣ = +10.000 poin<br>
@@ -395,10 +395,10 @@
   fetch("api.json", { cache: "no-store" }).then(r => r.json()).then(j => {
     if (j && j.api) fetch(j.api + "/ping").then(r => r.json()).then(p => { if (p && p.ok) API = j.api; }).catch(() => {});
   }).catch(() => {});
-  function apiMode() { return !!API && !!(tg && tg.initData); }
+  function apiMode() { return !!API && !!((tg && tg.initData) || (S && S.bt)); }
   function apiAct(action) {
     if (!apiMode()) return Promise.resolve(null);
-    return fetch(API + "/action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: tg.initData, action: action }) })
+    return fetch(API + "/action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: tg.initData || "", bt: (S && S.bt) || "", uid: (S && S.uid) || null, action: action }) })
       .then(r => r.json())
       .then(j => {
         if (!j || !j.ok || !j.ticket) return null;
@@ -486,13 +486,13 @@
       title.innerHTML = "<span></span><b>+" + t.p + " poin</b>";
       title.querySelector("span").textContent = t.t;
       const btn = document.createElement("button");
-      btn.className = "btn btn-ghost";
+      btn.className = "btn btn-gold";
       if (t.c) {
         btn.disabled = true; btn.textContent = "✔ Selesai";
       } else {
-        btn.textContent = "▶ Buka Tugas";
+        btn.textContent = "▶ Buka Link Tugas";
         btn.onclick = () => {
-          tg.openLink(t.u);
+          if (t.u.indexOf("t.me/") >= 0 && tg.openTelegramLink) tg.openTelegramLink(t.u); else tg.openLink(t.u);
           let left = 15;
           btn.disabled = true;
           btn.textContent = "⏳ Tunggu " + left + " detik…";
