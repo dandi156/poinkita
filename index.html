@@ -42,6 +42,21 @@
                          50% { box-shadow:0 4px 14px rgba(0,0,0,.3), 0 0 22px rgba(245,185,33,.45); } }
   .reel.spinning { animation:reelshake .12s linear infinite; filter:blur(1.2px); }
   @keyframes reelshake { 0% { transform:translateY(-2px); } 50% { transform:translateY(2px); } 100% { transform:translateY(-2px); } }
+  .machine { position:relative; border:2px solid #f5b921; border-radius:16px; padding:12px 10px 14px;
+             background:radial-gradient(300px 120px at 50% 0%, rgba(245,185,33,.14), rgba(0,0,0,0) 70%), #071f16;
+             box-shadow:inset 0 0 24px rgba(0,0,0,.55), 0 0 18px rgba(245,185,33,.15); margin-bottom:12px; }
+  .lights { display:flex; justify-content:space-between; padding:0 4px 8px; }
+  .lights span { width:9px; height:9px; border-radius:50%; background:#ffd23c; box-shadow:0 0 9px #ffd23c; animation:blink .9s steps(1) infinite; }
+  .lights span:nth-child(even) { background:#ff5d8f; box-shadow:0 0 9px #ff5d8f; animation-delay:.45s; }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:.2; } }
+  .marquee { text-align:center; margin:0 0 4px; font-size:20px; font-weight:800; letter-spacing:1px; color:#ffd964; }
+  .reel.stop { animation:stopbounce .28s ease; }
+  @keyframes stopbounce { 0% { transform:translateY(-7px) scale(1.07); } 60% { transform:translateY(2px) scale(.98); } 100% { transform:none; } }
+  .bigwin { text-align:center; font-size:24px; font-weight:900; color:#ffd23c; margin-top:10px;
+            text-shadow:0 0 18px rgba(245,185,33,.8); animation:bigwinzoom .45s ease infinite alternate; }
+  @keyframes bigwinzoom { from { transform:scale(1); } to { transform:scale(1.13); } }
+  .coin { position:absolute; z-index:6; font-size:20px; pointer-events:none; animation:coinfly 1.05s ease-out forwards; }
+  @keyframes coinfly { to { transform:translate(var(--dx), var(--dy)) rotate(330deg) scale(.55); opacity:0; } }
   .btn-gold:disabled { background:#5c5326; color:#bdb37e; cursor:default; box-shadow:none; animation:none; }
   .reels { display:flex; justify-content:center; gap:10px; margin:14px 0 2px; }
   .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:50; display:flex; gap:6px;
@@ -150,10 +165,20 @@
   <div class="tabpage" id="tab-slot" style="display:none">
   <div class="card">
     <h2>🎰 Spin Harian Gratis</h2>
-    <div class="reels"><div class="reel" id="reel1">🍒</div><div class="reel" id="reel2">⭐</div><div class="reel" id="reel3">🍋</div></div>
+    <div class="machine" id="slotmachine">
+      <div class="lights"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="marquee">🎰 CUAN SLOT 🎰</div>
+      <div class="reels"><div class="reel" id="reel1">🍒</div><div class="reel" id="reel2">⭐</div><div class="reel" id="reel3">🍋</div></div>
+      <div class="bigwin" id="bigwin" style="display:none">💥 BIG WIN 💥</div>
+    </div>
     <button class="btn btn-gold" id="btn-spin">🎰 Putar Spin</button>
     <div class="msg" id="msg-spin"></div>
-    <p class="small">Gratis 3x sehari, <b>tanpa pasang poin</b>. Sepasang +2, tiga sama +10 s/d +50, jackpot 7️⃣7️⃣7️⃣ = +77 poin. Hasil resminya dikirim bot di chat.</p>
+    <div class="row"><span>Sepasang</span><b>+2 poin</b></div>
+    <div class="row"><span>Tiga sama 🍒🍋🔔</span><b>+10 poin</b></div>
+    <div class="row"><span>⭐⭐⭐</span><b>+25 poin</b></div>
+    <div class="row"><span>💎💎💎</span><b>+50 poin</b></div>
+    <div class="row"><span>7️⃣7️⃣7️⃣ JACKPOT</span><b>+77 poin</b></div>
+    <p class="small">Gratis 3x sehari, <b>tanpa pasang poin</b>. Animasi di sini cuma pemanis — undian resminya jalan di server bot dan hasilnya dikirim ke chat.</p>
   </div>
   </div>
 
@@ -352,22 +377,49 @@
     });
     return adsLoading;
   }
+  function coinBurst() {
+    const host = $("slotmachine");
+    for (let i = 0; i < 14; i++) {
+      const c = document.createElement("div");
+      c.className = "coin";
+      c.textContent = "🪙";
+      c.style.left = (38 + Math.random() * 24) + "%";
+      c.style.top = "42%";
+      c.style.setProperty("--dx", (Math.random() * 220 - 110) + "px");
+      c.style.setProperty("--dy", (Math.random() * -120 - 30) + "px");
+      host.appendChild(c);
+      setTimeout(() => c.remove(), 1100);
+    }
+  }
+
   $("btn-spin").onclick = () => {
     const faces = ["🍒", "🍋", "🔔", "⭐", "💎", "7️⃣"];
     const reels = [$("reel1"), $("reel2"), $("reel3")];
     $("btn-spin").disabled = true;
     $("msg-spin").textContent = "Muter… 🎲";
-    reels.forEach(r => r.classList.add("spinning"));
-    let n = 0;
+    $("bigwin").style.display = "none";
+    const finals = reels.map(() => faces[Math.floor(Math.random() * faces.length)]);
+    reels.forEach(r => { r.classList.remove("stop"); r.classList.add("spinning"); });
     const iv = setInterval(() => {
-      reels.forEach(r => { r.textContent = faces[Math.floor(Math.random() * faces.length)]; });
-      if (++n >= 10) {
-        clearInterval(iv);
-        reels.forEach(r => r.classList.remove("spinning"));
-        // Hasil resmi diundi & diputuskan bot (server-side), animasi di sini cuma pemanis.
-        tg.sendData(JSON.stringify({ a: "spin" }));
+      reels.forEach((r, i) => { if (!r.classList.contains("stop")) r.textContent = faces[Math.floor(Math.random() * faces.length)]; });
+    }, 75);
+    [650, 950, 1250].forEach((ms, i) => setTimeout(() => {
+      reels[i].classList.remove("spinning");
+      reels[i].classList.add("stop");
+      reels[i].textContent = finals[i];
+    }, ms));
+    setTimeout(() => {
+      clearInterval(iv);
+      if (finals[0] === finals[1] && finals[1] === finals[2]) {
+        $("bigwin").style.display = "block";
+        coinBurst();
+        setTimeout(() => { $("bigwin").style.display = "none"; }, 2800);
       }
-    }, 80);
+      // Hasil resmi diundi & diputuskan bot (server-side), animasi di sini cuma pemanis.
+      tg.sendData(JSON.stringify({ a: "spin" }));
+      $("msg-spin").textContent = "🎲 Undian jalan di server — hasil resminya bot kirim di chat ya!";
+      setTimeout(() => { $("btn-spin").disabled = false; }, 1200);
+    }, 1450);
   };
 
   function countUp(el, target) {
