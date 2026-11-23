@@ -51,6 +51,13 @@
     <p class="small" id="gate-diag"></p>
   </div>
 
+  <div class="card" id="admode" style="display:none">
+    <h2>🎬 Iklan Video</h2>
+    <p class="small" style="font-size:14px">Pencet tombol di bawah, tonton videonya <b>sampai selesai</b> — habis itu kamu balik ke chat bot dan poinnya masuk otomatis.</p>
+    <button class="btn btn-gold" id="btn-ad-play">▶️ Putar Iklannya</button>
+    <div class="msg" id="msg-adplay"></div>
+  </div>
+
   <div id="app">
   <div class="card">
     <div class="saldo-label">💰 Saldo poin kamu</div>
@@ -81,7 +88,7 @@
     <div class="row"><span>Batas harian</span><b>5 video/hari</b></div>
     <button class="btn btn-gold" id="btn-ad">▶️ Tonton Iklan (+5 poin)</button>
     <div class="msg" id="msg-ad"></div>
-    <p class="small">Tonton videonya sampai selesai, poinnya masuk otomatis. Kalau iklannya belum muncul, coba lagi nanti ya.</p>
+    <p class="small">Pencet tombolnya — bot bakal ngirimin link nonton khusus sekali pakai ke chat. Tonton videonya sampai selesai, poin masuk otomatis.</p>
   </div>
 
   <div class="card">
@@ -124,6 +131,12 @@
       const u = (tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
       $("hello").textContent = u ? ("Halo, " + (u.first_name || "teman") + " 👋") : "Halo 👋";
       $("app").style.display = "none";
+      const sp = tg.initDataUnsafe && tg.initDataUnsafe.start_param;
+      if (sp) {
+        window.__adCode = sp;
+        $("admode").style.display = "block";
+        return;
+      }
       $("gate").style.display = "block";
       let idl = 0;
       try { idl = (tg.initData || "").length; } catch (e) {}
@@ -255,8 +268,14 @@
     });
     return adsLoading;
   }
-  $("btn-ad").onclick = async () => {
-    const m = $("msg-ad");
+  $("btn-ad").onclick = () => {
+    // Dari jalur keyboard, AdsGram gak bisa jalan (initData kosong) — minta bot
+    // bikinin kode sekali pakai; nontonnya lewat link langsung (initData ada di sana).
+    tg.sendData(JSON.stringify({ a: "adprep" }));
+  };
+
+  $("btn-ad-play").onclick = async () => {
+    const m = $("msg-adplay");
     m.textContent = "Memuat iklan…";
     m.className = "msg";
     const diag = () => {
@@ -271,12 +290,16 @@
       if (!AdController) AdController = window.Adsgram.init({ blockId: "61523" });
     } catch (e) {
       AdController = null;
-      m.textContent = "Iklannya belum bisa dimuat — tutup aplikasinya, terus buka lagi dari chat bot ya 🙏" + diag();
+      m.textContent = "Iklannya belum bisa dimuat — tutup halamannya, terus buka lagi link nontonnya dari chat bot ya 🙏" + diag();
       m.className = "msg err"; return;
     }
     const done = r => {
       if (r && r.done) {
-        tg.sendData(JSON.stringify({ a: "ad" }));
+        m.textContent = "✅ Selesai! Lagi ngirim poinnya ke chat bot…";
+        m.className = "msg ok";
+        const url = "https://t.me/PoinKitaBot?start=adok_" + (window.__adCode || "");
+        try { tg.openTelegramLink(url); }
+        catch (e) { location.href = url; }
       } else {
         m.textContent = "Iklannya belum ditonton sampai selesai — poin belum masuk. Tonton sampai habis ya 🙏";
         m.className = "msg err";
