@@ -61,6 +61,12 @@
   </div>
 
   <div class="card">
+    <h2>📺 Tugas Sponsor</h2>
+    <div id="tasks"><p class="small">Memuat…</p></div>
+    <p class="small">Buka link sponsornya, tunggu 15 detik, terus klaim poinnya. Satu kali per tugas.</p>
+  </div>
+
+  <div class="card">
     <h2>💸 Tarik Saldo ke DANA</h2>
     <div class="row"><span>Minimum penarikan</span><b>Rp50</b></div>
     <div class="row"><span>Rate</span><b>1 poin = Rp1</b></div>
@@ -100,6 +106,7 @@
       $("reflink").textContent = "Link referral kamu ada di aplikasi (buka dari chat bot).";
       $("btn-checkin").disabled = true;
       $("btn-wd").disabled = true;
+      renderTasks();
       return;
     }
     $("hello").textContent = "Halo, " + (S.fn || "teman") + " 👋";
@@ -109,6 +116,49 @@
     $("reflink").textContent = S.rl;
     const b = $("btn-checkin");
     if (S.ci) { b.disabled = true; b.textContent = "⏰ Udah check-in hari ini"; }
+    renderTasks();
+  }
+  function renderTasks() {
+    const box = $("tasks");
+    if (!S || !S.tk || !S.tk.length) {
+      box.innerHTML = '<p class="small">Belum ada tugas sponsor saat ini. Cek lagi nanti ya 🙏</p>';
+      return;
+    }
+    box.innerHTML = "";
+    S.tk.forEach(t => {
+      const row = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "row";
+      title.innerHTML = "<span></span><b>+" + t.p + " poin</b>";
+      title.querySelector("span").textContent = t.t;
+      const btn = document.createElement("button");
+      btn.className = "btn btn-ghost";
+      if (t.c) {
+        btn.disabled = true; btn.textContent = "✔ Selesai";
+      } else {
+        btn.textContent = "▶ Buka Tugas";
+        btn.onclick = () => {
+          tg.openLink(t.u);
+          let left = 15;
+          btn.disabled = true;
+          btn.textContent = "⏳ Tunggu " + left + " detik…";
+          const iv = setInterval(() => {
+            left--;
+            if (left <= 0) {
+              clearInterval(iv);
+              btn.disabled = false;
+              btn.className = "btn btn-gold";
+              btn.textContent = "✅ Klaim +" + t.p + " poin";
+              btn.onclick = () => tg.sendData(JSON.stringify({ a: "task", id: t.i }));
+            } else {
+              btn.textContent = "⏳ Tunggu " + left + " detik…";
+            }
+          }, 1000);
+        };
+      }
+      row.appendChild(title); row.appendChild(btn);
+      box.appendChild(row);
+    });
   }
   $("btn-checkin").onclick = () => {
     const m = $("msg-checkin");
