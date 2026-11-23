@@ -379,7 +379,7 @@
     }
     if (S.wdh && S.wdh.length) {
       $("wdhist").style.display = "block";
-      const st = { pending: ['⏳ Diproses', 'b-pend'], paid: ['✅ Lunas', 'b-paid'], cancelled: ['❌ Dibatalkan', 'b-canc'] };
+      const st = { pending: ['⏳ Diproses', 'b-pend'], held: ['🔍 Ditinjau', 'b-pend'], paid: ['✅ Lunas', 'b-paid'], cancelled: ['❌ Dibatalkan', 'b-canc'] };
       $("wdhist-list").innerHTML = S.wdh.map(w => {
         const s = st[w.s] || st.pending;
         return `<div class="row"><span>#${w.i} · ${fmtRp(w.p)}<br><span class="small">${w.t}</span></span><span class="badge ${s[1]}">${s[0]}</span></div>`;
@@ -390,6 +390,60 @@
     renderAmts();
   }
   let GS = (S && S.gs) ? { spin: S.gs.spin, extra: S.gs.extra, mj: S.gs.mj, wheel: S.gs.wheel, dice: S.gs.dice } : null;
+  // ===== Mode server (bridge): aksi dikirim via server, aplikasi GAK nutup =====
+  let API = null;
+  fetch("api.json", { cache: "no-store" }).then(r => r.json()).then(j => {
+    if (j && j.api) fetch(j.api + "/ping").then(r => r.json()).then(p => { if (p && p.ok) API = j.api; }).catch(() => {});
+  }).catch(() => {});
+  function apiMode() { return !!API && !!(tg && tg.initData); }
+  function apiAct(action) {
+    if (!apiMode()) return Promise.resolve(null);
+    return fetch(API + "/action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: tg.initData, action: action }) })
+      .then(r => r.json())
+      .then(j => {
+        if (!j || !j.ok || !j.ticket) return null;
+        return new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            n++;
+            fetch(API + "/result/" + j.ticket).then(r => r.json()).then(rr => {
+              if (rr && rr.done) { clearInterval(iv); res(rr.result); }
+              else if (n > 30) { clearInterval(iv); res(null); }
+            }).catch(() => { if (n > 30) { clearInterval(iv); res(null); } });
+          }, 600);
+        });
+      })
+      .catch(() => null);
+  }
+  function errText(e) {
+    return { kuota: "Kuota game ini udah habis hari ini.", udah: "Udah check-in hari ini.", join_dulu: "Join grup dulu ya sebelum main.", maintenance: "Bot lagi maintenance — coba lagi nanti.", banned: "Akun dibatasi.", initdata: "Sesi aplikasi gak valid — buka ulang aplikasinya.", server: "Server lagi sibuk — coba lagi.", no_user: "Sesi gak dikenal — buka ulang aplikasinya." }[e] || "Ada kendala — coba lagi.";
+  }
+  function applyState(ns) {
+    if (!ns) return;
+    S = ns;
+    GS = { spin: ns.gs.spin, extra: ns.gs.extra, mj: ns.gs.mj, wheel: ns.gs.wheel, dice: ns.gs.dice };
+    $("poin").textContent = ns.p;
+    if (ns.bl > 0) { $("blrow").style.display = "flex"; $("blnote").style.display = "block"; $("blamt").textContent = fmtRp(ns.bl); }
+    else { $("blrow").style.display = "none"; $("blnote").style.display = "none"; }
+    if (ns.ci) { const b = $("btn-checkin"); b.disabled = true; b.textContent = "⏰ Udah check-in hari ini"; }
+    if (ns.gh) {
+      const GN = { spin: "🎰 Spin", mahjong: "🀄 Mahjong", wheel: "🎡 Roda Bonus", dice: "🎲 Tebak Dadu" };
+      if (ns.gh.length) $("ghist").style.display = "block";
+      $("ghist-list").innerHTML = ns.gh.map(g => {
+        const badge = g.p > 0 ? `<span class="badge b-paid">+${g.p} poin</span>` : `<span class="badge b-canc">zonk</span>`;
+        return `<div class="row"><span>${GN[g.g] || g.g} · ${g.d}<br><span class="small">${g.t}</span></span>${badge}</div>`;
+      }).join("");
+    }
+    if (ns.wdh) {
+      const st = { pending: ["⏳ Diproses", "b-pend"], held: ["🔍 Ditinjau", "b-pend"], paid: ["✅ Lunas", "b-paid"], cancelled: ["❌ Dibatalkan", "b-canc"] };
+      if (ns.wdh.length) $("wdhist").style.display = "block";
+      $("wdhist-list").innerHTML = ns.wdh.map(w => {
+        const s = st[w.s] || st.pending;
+        return `<div class="row"><span>#${w.i} · ${fmtRp(w.p)}<br><span class="small">${w.t}</span></span><span class="badge ${s[1]}">${s[0]}</span></div>`;
+      }).join("");
+    }
+    renderAmts();
+  }
   let wdAmt = "all";
   function fmtRp(n) { return "Rp" + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
   function renderAmts() {
@@ -467,8 +521,18 @@
 
   $("btn-checkin").onclick = () => {
     const m = $("msg-checkin");
-    m.textContent = "⏳ Ngirim ke bot…"; m.className = "msg";
-    tg.sendData(JSON.stringify({ a: "checkin" }));
+    if (!apiMode()) {
+      m.textContent = "⏳ Ngirim ke bot…"; m.className = "msg";
+      tg.sendData(JSON.stringify({ a: "checkin" }));
+      return;
+    }
+    m.textContent = "⏳ Check-in…"; m.className = "msg";
+    apiAct({ a: "checkin" }).then(r => {
+      if (!r) { tg.sendData(JSON.stringify({ a: "checkin" })); return; }
+      if (r.state) applyState(r.state);
+      if (r.ok) { m.textContent = "✅ Check-in berhasil! +20 poin" + (r.moved ? " + bonus kebuka " + r.moved + " poin 🔓" : "") + ". Saldo: " + S.p + " poin."; m.className = "msg ok"; }
+      else { m.textContent = errText(r.error); m.className = "msg err"; }
+    });
   };
   $("btn-copy").onclick = () => {
     const t = $("reflink").textContent;
@@ -537,26 +601,42 @@
     const finals = reels.map(() => faces[Math.floor(Math.random() * faces.length)]);
     reels.forEach(r => { r.classList.remove("stop"); r.classList.add("spinning"); });
     const iv = setInterval(() => {
-      reels.forEach((r, i) => { if (!r.classList.contains("stop")) r.textContent = faces[Math.floor(Math.random() * faces.length)]; });
+      reels.forEach(r => { if (!r.classList.contains("stop")) r.textContent = faces[Math.floor(Math.random() * faces.length)]; });
     }, 75);
-    [650, 950, 1250].forEach((ms, i) => setTimeout(() => {
-      reels[i].classList.remove("spinning");
-      reels[i].classList.add("stop");
-      reels[i].textContent = finals[i];
-    }, ms));
-    setTimeout(() => {
-      clearInterval(iv);
-      if (finals[0] === finals[1] && finals[1] === finals[2]) {
-        $("bigwin").style.display = "block";
-        coinBurst();
-        setTimeout(() => { $("bigwin").style.display = "none"; }, 2800);
-      }
-      // Hasil resmi diundi & diputuskan bot (server-side), animasi di sini cuma pemanis.
-      tg.sendData(JSON.stringify({ a: "spin" }));
-      if (GS) { if (GS.spin > 0) GS.spin--; else if (GS.extra > 0) GS.extra--; }
-      $("msg-spin").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
-      setTimeout(() => { $("btn-spin").disabled = false; }, 1200);
-    }, 1450);
+    let apiRes = null, apiDone = !apiMode(), finished = false;
+    if (apiMode()) apiAct({ a: "spin" }).then(r => { apiRes = r; apiDone = true; tryFinish(); });
+    setTimeout(() => { if (!apiDone) { apiRes = null; apiDone = true; tryFinish(); } }, 8000);
+    function tryFinish() {
+      if (!apiDone || finished) return;
+      finished = true;
+      [650, 950, 1250].forEach((ms, i) => setTimeout(() => {
+        reels[i].classList.remove("spinning");
+        reels[i].classList.add("stop");
+        reels[i].textContent = (apiRes && apiRes.ok) ? apiRes.roll[i] : finals[i];
+        if (i === 2) {
+          clearInterval(iv);
+          const syms = (apiRes && apiRes.ok) ? apiRes.roll : finals;
+          if (syms[0] === syms[1] && syms[1] === syms[2]) {
+            $("bigwin").style.display = "block";
+            coinBurst();
+            setTimeout(() => { $("bigwin").style.display = "none"; }, 2800);
+          }
+          if (apiRes && apiRes.ok) {
+            if (apiRes.state) applyState(apiRes.state);
+            $("msg-spin").textContent = apiRes.prize > 0 ? ("🎉 +" + apiRes.prize + " poin! Saldo kamu sekarang " + S.p + " poin.") : "Zonk — belum beruntung kali ini. Spin lagi!";
+          } else if (apiRes && !apiRes.ok) {
+            if (apiRes.state) applyState(apiRes.state);
+            $("msg-spin").textContent = errText(apiRes.error);
+          } else {
+            tg.sendData(JSON.stringify({ a: "spin" }));
+            if (GS) { if (GS.spin > 0) GS.spin--; else if (GS.extra > 0) GS.extra--; }
+            $("msg-spin").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
+          }
+          setTimeout(() => { $("btn-spin").disabled = false; }, 600);
+        }
+      }, ms));
+    }
+    tryFinish();
   };
 
   const MJ_SYMS = ["🀉", "🀈", "🀇", "🀀", "🀅", "🀄"];
@@ -569,34 +649,50 @@
     }
     mjSpinning = true;
     $("btn-mj").disabled = true;
+    $("msg-mj").textContent = "Muter… 🀄";
     $("mj-bigwin").style.display = "none";
     const reels = [$("mjr0"), $("mjr1"), $("mjr2")];
-    const stops = [650, 950, 1250];
     const finals = reels.map(() => MJ_SYMS[Math.floor(Math.random() * MJ_SYMS.length)]);
-    reels.forEach((r, i) => {
+    const ivs = reels.map(r => {
       r.classList.add("spinning");
-      const iv = setInterval(() => { r.textContent = MJ_SYMS[Math.floor(Math.random() * MJ_SYMS.length)]; }, 70);
-      setTimeout(() => {
-        clearInterval(iv);
-        r.textContent = finals[i];
-        r.classList.remove("spinning");
-        r.classList.remove("stopbounce"); void r.offsetWidth; r.classList.add("stopbounce");
+      return setInterval(() => { r.textContent = MJ_SYMS[Math.floor(Math.random() * MJ_SYMS.length)]; }, 70);
+    });
+    let apiRes = null, apiDone = !apiMode(), baseDone = false, finished = false;
+    if (apiMode()) apiAct({ a: "mahjong" }).then(r => { apiRes = r; apiDone = true; tryFinish(); });
+    setTimeout(() => { baseDone = true; tryFinish(); }, 1300);
+    setTimeout(() => { if (!apiDone) { apiRes = null; apiDone = true; tryFinish(); } }, 8000);
+    function tryFinish() {
+      if (!baseDone || !apiDone || finished) return;
+      finished = true;
+      [0, 300, 600].forEach((ms, i) => setTimeout(() => {
+        clearInterval(ivs[i]);
+        reels[i].textContent = (apiRes && apiRes.ok) ? apiRes.roll[i] : finals[i];
+        reels[i].classList.remove("spinning");
+        reels[i].classList.remove("stopbounce"); void reels[i].offsetWidth; reels[i].classList.add("stopbounce");
         if (i === 2) {
           mjSpinning = false;
           $("btn-mj").disabled = false;
-          if (finals[0] === finals[1] && finals[1] === finals[2]) {
+          const syms = (apiRes && apiRes.ok) ? apiRes.roll : finals;
+          if (syms[0] === syms[1] && syms[1] === syms[2]) {
             const bw = $("mj-bigwin");
             bw.style.display = "block";
             coinBurst();
             setTimeout(() => bw.style.display = "none", 2600);
           }
+          if (apiRes && apiRes.ok) {
+            if (apiRes.state) applyState(apiRes.state);
+            $("msg-mj").textContent = apiRes.prize > 0 ? ("🎉 +" + apiRes.prize + " poin! Saldo kamu sekarang " + S.p + " poin.") : "Zonk — belum beruntung kali ini. Putar lagi!";
+          } else if (apiRes && !apiRes.ok) {
+            if (apiRes.state) applyState(apiRes.state);
+            $("msg-mj").textContent = errText(apiRes.error);
+          } else {
+            tg.sendData(JSON.stringify({ a: "mahjong" }));
+            if (GS && GS.mj > 0) GS.mj--;
+            $("msg-mj").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
+          }
         }
-      }, stops[i]);
-    });
-    // Hasil resmi diundi & diputuskan bot (server-side), animasi di sini cuma pemanis.
-    setTimeout(() => tg.sendData(JSON.stringify({ a: "mahjong" })), 1350);
-    if (GS && GS.mj > 0) GS.mj--;
-    $("msg-mj").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
+      }, ms));
+    }
   };
 
   // Tombol gerbang "Buka Chat Bot": link biasa sering macet di WebView Telegram,
@@ -619,12 +715,26 @@
     $("msg-wheel").textContent = "Rodanya muter… 🎡";
     wheelRot += 1440 + Math.floor(Math.random() * 360);
     $("wheel").style.transform = "rotate(" + wheelRot + "deg)";
-    setTimeout(() => {
-      tg.sendData(JSON.stringify({ a: "wheel" }));
-      if (GS && GS.wheel > 0) GS.wheel--;
-      $("msg-wheel").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
-      setTimeout(() => { $("btn-wheel").disabled = false; }, 1200);
-    }, 2750);
+    let apiRes = null, apiDone = !apiMode(), baseDone = false, finished = false;
+    if (apiMode()) apiAct({ a: "wheel" }).then(r => { apiRes = r; apiDone = true; tryFinish(); });
+    setTimeout(() => { baseDone = true; tryFinish(); }, 2750);
+    setTimeout(() => { if (!apiDone) { apiRes = null; apiDone = true; tryFinish(); } }, 9000);
+    function tryFinish() {
+      if (!baseDone || !apiDone || finished) return;
+      finished = true;
+      if (apiRes && apiRes.ok) {
+        if (apiRes.state) applyState(apiRes.state);
+        $("msg-wheel").textContent = apiRes.prize > 0 ? ("🎡 Roda berhenti di angka emas: +" + apiRes.prize + " poin! Saldo: " + S.p + " poin.") : "🎡 Zonk! Rodanya berhenti di 0 — coba lagi besok ya.";
+      } else if (apiRes && !apiRes.ok) {
+        if (apiRes.state) applyState(apiRes.state);
+        $("msg-wheel").textContent = errText(apiRes.error);
+      } else {
+        tg.sendData(JSON.stringify({ a: "wheel" }));
+        if (GS && GS.wheel > 0) GS.wheel--;
+        $("msg-wheel").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
+      }
+      setTimeout(() => { $("btn-wheel").disabled = false; }, 600);
+    }
   };
 
   function rollDice(pick) {
@@ -638,15 +748,31 @@
     $("msg-dice").textContent = "Dadunya digelindingin… 🎲";
     $("dieface").classList.add("rolling");
     const iv = setInterval(() => { $("dieface").textContent = faces[Math.floor(Math.random() * 6)]; }, 80);
-    setTimeout(() => {
+    let apiRes = null, apiDone = !apiMode(), baseDone = false, finished = false;
+    if (apiMode()) apiAct({ a: "dice", pick: pick }).then(r => { apiRes = r; apiDone = true; tryFinish(); });
+    setTimeout(() => { baseDone = true; tryFinish(); }, 700);
+    setTimeout(() => { if (!apiDone) { apiRes = null; apiDone = true; tryFinish(); } }, 8000);
+    function tryFinish() {
+      if (!baseDone || !apiDone || finished) return;
+      finished = true;
       clearInterval(iv);
       $("dieface").classList.remove("rolling");
-      $("dieface").textContent = "🎲";
-      tg.sendData(JSON.stringify({ a: "dice", pick: pick }));
-      if (GS && GS.dice > 0) GS.dice--;
-      $("msg-dice").textContent = "🎲 Pilihanmu: " + (pick === "kecil" ? "Kecil (1-3)" : "Besar (4-6)") + " — hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
-      setTimeout(() => { $("btn-dice-kecil").disabled = false; $("btn-dice-besar").disabled = false; }, 1200);
-    }, 700);
+      if (apiRes && apiRes.ok) {
+        $("dieface").textContent = faces[apiRes.roll - 1];
+        if (apiRes.state) applyState(apiRes.state);
+        $("msg-dice").textContent = apiRes.prize > 0 ? ("✅ Bener! Keluar " + apiRes.roll + " — +" + apiRes.prize + " poin! Saldo: " + S.p + " poin.") : ("❌ Keluar " + apiRes.roll + " — tebakanmu meleset. Coba lagi!");
+      } else if (apiRes && !apiRes.ok) {
+        $("dieface").textContent = "🎲";
+        if (apiRes.state) applyState(apiRes.state);
+        $("msg-dice").textContent = errText(apiRes.error);
+      } else {
+        $("dieface").textContent = "🎲";
+        tg.sendData(JSON.stringify({ a: "dice", pick: pick }));
+        if (GS && GS.dice > 0) GS.dice--;
+        $("msg-dice").textContent = "🎲 Pilihanmu: " + (pick === "kecil" ? "Kecil (1-3)" : "Besar (4-6)") + " — hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
+      }
+      setTimeout(() => { $("btn-dice-kecil").disabled = false; $("btn-dice-besar").disabled = false; }, 600);
+    }
   }
   $("btn-dice-kecil").onclick = () => rollDice("kecil");
   $("btn-dice-besar").onclick = () => rollDice("besar");
