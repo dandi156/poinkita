@@ -215,13 +215,18 @@
     tg.showAlert("Link disalin:\n" + t);
   };
   let AdController = null;
-  try {
-    if (window.Adsgram) AdController = window.Adsgram.init({ blockId: "61523" });
-  } catch (e) { AdController = null; }
+  function getAdController() {
+    if (AdController) return AdController;
+    try {
+      if (window.Adsgram) AdController = window.Adsgram.init({ blockId: "61523" });
+    } catch (e) { AdController = null; }
+    return AdController;
+  }
   $("btn-ad").onclick = () => {
     const m = $("msg-ad");
-    if (!AdController) {
-      m.textContent = "Iklan belum siap — coba buka lagi aplikasinya ya.";
+    const ctl = getAdController();
+    if (!ctl) {
+      m.textContent = "Iklannya belum bisa dimuat — tutup aplikasinya, terus buka lagi dari chat bot ya 🙏";
       m.className = "msg err"; return;
     }
     m.textContent = "Memuat iklan…";
@@ -234,8 +239,9 @@
         m.className = "msg err";
       }
     };
-    AdController.show().then(done).catch(err => {
+    ctl.show().then(done).catch(err => {
       if (err && err.done) { done(err); return; }
+      AdController = null;
       m.textContent = "Iklan belum tersedia saat ini — coba lagi nanti ya 🙏";
       m.className = "msg err";
     });
