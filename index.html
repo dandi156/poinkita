@@ -388,6 +388,7 @@
     renderTasks();
     renderAmts();
   }
+  let GS = (S && S.gs) ? { spin: S.gs.spin, extra: S.gs.extra, mj: S.gs.mj, wheel: S.gs.wheel, dice: S.gs.dice } : null;
   let wdAmt = "all";
   function fmtRp(n) { return "Rp" + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
   function renderAmts() {
@@ -523,6 +524,10 @@
   }
 
   $("btn-spin").onclick = () => {
+    if (GS && GS.spin <= 0 && GS.extra <= 0) {
+      $("msg-spin").textContent = "🎰 Spin gratis hari ini udah habis (3x). Mau spin lagi? Dapetin 🎟️ spin ekstra: 🎬 nonton iklan video (+1) atau 📺 selesaiin tugas sponsor (+1).";
+      return;
+    }
     const faces = ["🍒", "🍋", "🔔", "⭐", "💎", "7️⃣"];
     const reels = [$("reel1"), $("reel2"), $("reel3")];
     $("btn-spin").disabled = true;
@@ -547,6 +552,7 @@
       }
       // Hasil resmi diundi & diputuskan bot (server-side), animasi di sini cuma pemanis.
       tg.sendData(JSON.stringify({ a: "spin" }));
+      if (GS) { if (GS.spin > 0) GS.spin--; else if (GS.extra > 0) GS.extra--; }
       $("msg-spin").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
       setTimeout(() => { $("btn-spin").disabled = false; }, 1200);
     }, 1450);
@@ -556,6 +562,10 @@
   let mjSpinning = false;
   $("btn-mj").onclick = () => {
     if (mjSpinning) return;
+    if (GS && GS.mj <= 0) {
+      $("msg-mj").textContent = "🀄 Mahjong gratis hari ini udah habis (3x). Balik lagi besok ya!";
+      return;
+    }
     mjSpinning = true;
     $("btn-mj").disabled = true;
     $("mj-bigwin").style.display = "none";
@@ -584,6 +594,7 @@
     });
     // Hasil resmi diundi & diputuskan bot (server-side), animasi di sini cuma pemanis.
     setTimeout(() => tg.sendData(JSON.stringify({ a: "mahjong" })), 1350);
+    if (GS && GS.mj > 0) GS.mj--;
     $("msg-mj").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
   };
 
@@ -599,18 +610,27 @@
 
   let wheelRot = 0;
   $("btn-wheel").onclick = () => {
+    if (GS && GS.wheel <= 0) {
+      $("msg-wheel").textContent = "🎡 Roda Bonus hari ini udah diputar. Balik lagi besok ya!";
+      return;
+    }
     $("btn-wheel").disabled = true;
     $("msg-wheel").textContent = "Rodanya muter… 🎡";
     wheelRot += 1440 + Math.floor(Math.random() * 360);
     $("wheel").style.transform = "rotate(" + wheelRot + "deg)";
     setTimeout(() => {
       tg.sendData(JSON.stringify({ a: "wheel" }));
+      if (GS && GS.wheel > 0) GS.wheel--;
       $("msg-wheel").textContent = "✅ Tercatat! Hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
       setTimeout(() => { $("btn-wheel").disabled = false; }, 1200);
     }, 2750);
   };
 
   function rollDice(pick) {
+    if (GS && GS.dice <= 0) {
+      $("msg-dice").textContent = "🎲 Jatah Tebak Dadu hari ini udah habis (3x). Balik lagi besok ya!";
+      return;
+    }
     const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
     $("btn-dice-kecil").disabled = true;
     $("btn-dice-besar").disabled = true;
@@ -622,6 +642,7 @@
       $("dieface").classList.remove("rolling");
       $("dieface").textContent = "🎲";
       tg.sendData(JSON.stringify({ a: "dice", pick: pick }));
+      if (GS && GS.dice > 0) GS.dice--;
       $("msg-dice").textContent = "🎲 Pilihanmu: " + (pick === "kecil" ? "Kecil (1-3)" : "Besar (4-6)") + " — hasil resminya masuk ke 🏆 Riwayat Permainan di bawah (buka ulang aplikasi buat refresh).";
       setTimeout(() => { $("btn-dice-kecil").disabled = false; $("btn-dice-besar").disabled = false; }, 1200);
     }, 700);
