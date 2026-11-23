@@ -48,7 +48,7 @@
     <h2>👋 Satu langkah lagi</h2>
     <p class="small" style="font-size:14px">Kamu lagi buka aplikasi dari <b>link langsung</b>. Di mode ini Telegram gak ngirim data saldo kamu, jadi tombol-tombolnya mati.</p>
     <p class="small" style="font-size:14px">Buka lewat chat bot, terus pencet tombol besar <b>🌐 Buka Aplikasi</b> di bagian bawah chat — di situ saldo &amp; semua tombolnya jalan 👇</p>
-    <button class="btn btn-gold" id="btn-goto-bot">💬 Buka Chat Bot</button>
+    <a class="btn btn-gold" href="https://t.me/PoinKitaBot" style="display:block; text-align:center; text-decoration:none;">💬 Buka Chat Bot</a>
   </div>
 
   <div id="app">
@@ -207,11 +207,6 @@
       box.appendChild(row);
     });
   }
-  $("btn-goto-bot").onclick = () => {
-    try { tg.openTelegramLink("https://t.me/PoinKitaBot"); }
-    catch (e) { location.href = "https://t.me/PoinKitaBot"; }
-  };
-
   $("btn-checkin").onclick = () => {
     const m = $("msg-checkin");
     m.textContent = "⏳ Ngirim ke bot…"; m.className = "msg";
