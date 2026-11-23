@@ -83,8 +83,16 @@
     <h2>👥 Undang Teman</h2>
     <div class="row"><span>Per teman gabung</span><b>+50 poin</b></div>
     <div class="row"><span>Teman yang udah gabung</span><b id="refcount">–</b></div>
+    <div class="row"><span>🎁 Bonus 30 teman</span><b>+1.500 poin</b></div>
+    <div class="row"><span>🎁 Bonus 50 teman</span><b>+3.000 poin</b></div>
     <div class="link-box" id="reflink">…</div>
     <button class="btn btn-ghost" id="btn-copy">📋 Salin Link</button>
+  </div>
+
+  <div class="card" id="lbcard" style="display:none">
+    <h2>🏆 Pengajak Terbanyak</h2>
+    <div id="lblist"></div>
+    <p class="small">Papan peringkat pengajak teman terbanyak. Rebut posisi puncaknya! 👑</p>
   </div>
 
   <div class="card">
@@ -125,7 +133,7 @@
   <div class="card">
     <h2>ℹ️ Cara Dapat Poin</h2>
     <p class="small">1️⃣ Check-in tiap hari: +20 poin<br>
-    2️⃣ Undang teman pakai link kamu: +50 poin/orang<br>
+    2️⃣ Undang teman pakai link kamu: +50 poin/orang (bonus 30 teman +1.500, 50 teman +3.000)<br>
     3️⃣ Tugas sponsor: +poin per tugas<br>
     4️⃣ Tonton iklan video: +5 poin/video (maks 5x/hari)<br>
     5️⃣ Spin harian gratis: 3x/hari, hadiah sampai +77 poin<br>
@@ -169,6 +177,22 @@
     $("rp").textContent = "± Rp" + S.p;
     $("refcount").textContent = S.rc;
     $("reflink").textContent = S.rl;
+    if (S.lb && S.lb.length) {
+      $("lbcard").style.display = "block";
+      const box = $("lblist");
+      box.innerHTML = "";
+      const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+      S.lb.forEach((e, i) => {
+        const row = document.createElement("div");
+        row.className = "row";
+        const nm = document.createElement("span");
+        nm.textContent = (medals[i] || "") + " " + e.n;
+        const ct = document.createElement("b");
+        ct.textContent = e.c + " teman";
+        row.appendChild(nm); row.appendChild(ct);
+        box.appendChild(row);
+      });
+    }
     const b = $("btn-checkin");
     if (S.ci) { b.disabled = true; b.textContent = "⏰ Udah check-in hari ini"; }
     renderTasks();
