@@ -234,12 +234,18 @@
     const m = $("msg-ad");
     m.textContent = "Memuat iklan…";
     m.className = "msg";
+    const diag = () => {
+      let idl = 0;
+      try { idl = (tg.initData || "").length; } catch (e) {}
+      const hh = (location.hash || "").indexOf("tgWebAppData") >= 0;
+      return " (cek: initData " + idl + ", hash " + (hh ? "ada" : "kosong") + ", via " + (tg.platform || "?") + ")";
+    };
     try {
       await loadAdsSdk();
       if (!AdController) AdController = window.Adsgram.init({ blockId: "61523" });
     } catch (e) {
       AdController = null;
-      m.textContent = "Iklannya belum bisa dimuat — tutup aplikasinya, terus buka lagi dari chat bot ya 🙏";
+      m.textContent = "Iklannya belum bisa dimuat — tutup aplikasinya, terus buka lagi dari chat bot ya 🙏" + diag();
       m.className = "msg err"; return;
     }
     const done = r => {
@@ -253,7 +259,7 @@
     AdController.show().then(done).catch(err => {
       if (err && err.done) { done(err); return; }
       AdController = null;
-      m.textContent = "Iklan belum tersedia saat ini — coba lagi nanti ya 🙏";
+      m.textContent = "Iklan belum tersedia saat ini — coba lagi nanti ya 🙏" + diag();
       m.className = "msg err";
     });
   };
