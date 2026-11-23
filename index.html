@@ -275,6 +275,7 @@
     <div class="row"><span>Jumlah tarik</span><b id="amt-label">Semua saldo</b></div>
     <div id="amts" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
     <input id="dana" inputmode="numeric" placeholder="Nomor DANA (08xxxx)">
+    <input id="dananame" type="text" placeholder="Nama pemilik DANA (sesuai aplikasi DANA)" style="margin-top:8px">
     <button class="btn btn-gold" id="btn-wd">Ajukan Penarikan</button>
     <div class="msg" id="msg-wd"></div>
     <p class="small">Diproses manual oleh admin, maks 1x24 jam hari kerja. Tarik berapapun asal saldo bebasmu cukup. Bonus terkunci belum bisa ditarik (kebuka 2.000 tiap check-in harian). Penarikan Rp500 cuma bisa <b>1x per akun</b>; Rp50.000 & Rp100.000 butuh minimal <b>5 hari check-in</b>; Rp50 maksimal 1x sehari.</p>
@@ -721,6 +722,11 @@
       m.textContent = "Nomor DANA-nya cek lagi ya (awali 0, 9–15 digit).";
       m.className = "msg err"; return;
     }
+    const dname = $("dananame").value.trim();
+    if (dname.length < 3) {
+      m.textContent = "Isi dulu nama pemilik DANA-nya (sesuai aplikasi DANA).";
+      m.className = "msg err"; return;
+    }
     const amount = (wdAmt === "all") ? (S ? S.p : 0) : wdAmt;
     if (S && amount < 50) {
       m.textContent = "Saldo belum cukup — minimum tarik 50 poin.";
@@ -730,9 +736,9 @@
       m.textContent = "Jumlahnya melebihi saldo kamu.";
       m.className = "msg err"; return;
     }
-    tg.showConfirm("Tarik " + amount + " poin (Rp" + amount + ") ke DANA " + dana + "?\nPoin langsung kepotong dan pengajuan langsung masuk ke admin.", ok => {
+    tg.showConfirm("Tarik " + amount + " poin (Rp" + amount + ") ke DANA " + dana + " a.n. " + dname + "?\nPoin langsung kepotong dan pengajuan langsung masuk ke admin.", ok => {
       if (ok) {
-        tg.sendData(JSON.stringify({ a: "wd", dana: dana, amt: wdAmt }));
+        tg.sendData(JSON.stringify({ a: "wd", dana: dana, nm: dname, amt: wdAmt }));
         m.textContent = "✅ Pengajuan terkirim! Statusnya bisa kamu pantau di Riwayat Penarikan di bawah — buka ulang aplikasi ini buat lihat yang paling baru.";
         m.className = "msg ok";
       }
