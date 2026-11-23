@@ -123,7 +123,7 @@
     <h2>👋 Satu langkah lagi</h2>
     <p class="small" style="font-size:14px">Kamu lagi buka aplikasi dari <b>link langsung</b>. Di mode ini Telegram gak ngirim data saldo kamu, jadi tombol-tombolnya mati.</p>
     <p class="small" style="font-size:14px">Buka lewat chat bot, terus pencet tombol besar <b>🌐 Buka Aplikasi</b> di bagian bawah chat — di situ saldo &amp; semua tombolnya jalan 👇</p>
-    <a class="btn btn-gold" id="btn-gotochat" href="https://t.me/PoinKitaBot" style="display:block; text-align:center; text-decoration:none;">💬 Buka Chat Bot</a>
+    <a class="btn btn-gold" id="btn-gotochat" href="https://t.me/PoinKitaBot" onclick="return goChat();" style="display:block; text-align:center; text-decoration:none;">💬 Buka Chat Bot</a>
     <p class="small" id="gate-diag"></p>
   </div>
 
@@ -294,6 +294,19 @@
     <button class="tabbtn" id="tabbtn-wd">💸 Tarik</button>
   </div>
 
+<script>
+  // Fungsi mandiri buat tombol gerbang — didefinisikan di blok terpisah biar tetap
+  // hidup walau skrip utama error di tengah.
+  function goChat() {
+    try {
+      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink) {
+        Telegram.WebApp.openTelegramLink("https://t.me/PoinKitaBot");
+        return false;
+      }
+    } catch (e) {}
+    return true;
+  }
+</script>
 <script>
   const tg = window.Telegram.WebApp;
   tg.ready(); tg.expand();
