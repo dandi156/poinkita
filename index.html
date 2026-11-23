@@ -70,6 +70,8 @@
     <h2>💸 Tarik Saldo ke DANA</h2>
     <div class="row"><span>Minimum penarikan</span><b>Rp50</b></div>
     <div class="row"><span>Rate</span><b>1 poin = Rp1</b></div>
+    <div class="row"><span>Jumlah tarik</span><b id="amt-label">Semua saldo</b></div>
+    <div id="amts" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
     <input id="dana" inputmode="numeric" placeholder="Nomor DANA (08xxxx)">
     <button class="btn btn-gold" id="btn-wd">Ajukan Penarikan</button>
     <div class="msg" id="msg-wd"></div>
@@ -117,6 +119,31 @@
     const b = $("btn-checkin");
     if (S.ci) { b.disabled = true; b.textContent = "⏰ Udah check-in hari ini"; }
     renderTasks();
+    renderAmts();
+  }
+  let wdAmt = "all";
+  function fmtRp(n) { return "Rp" + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+  function renderAmts() {
+    const box = $("amts");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!S) return;
+    const opts = [50, 100, 500, 1000, 5000];
+    opts.forEach(v => {
+      if (v > S.p) return;
+      const c = document.createElement("button");
+      c.className = "btn " + (wdAmt === v ? "btn-gold" : "btn-ghost");
+      c.style.width = "auto"; c.style.marginTop = "0"; c.style.padding = "10px 14px";
+      c.textContent = fmtRp(v);
+      c.onclick = () => { wdAmt = v; $("amt-label").textContent = fmtRp(v); renderAmts(); };
+      box.appendChild(c);
+    });
+    const all = document.createElement("button");
+    all.className = "btn " + (wdAmt === "all" ? "btn-gold" : "btn-ghost");
+    all.style.width = "auto"; all.style.marginTop = "0"; all.style.padding = "10px 14px";
+    all.textContent = "Semua";
+    all.onclick = () => { wdAmt = "all"; $("amt-label").textContent = "Semua saldo"; renderAmts(); };
+    box.appendChild(all);
   }
   function renderTasks() {
     const box = $("tasks");
@@ -177,12 +204,17 @@
       m.textContent = "Nomor DANA-nya cek lagi ya (awali 0, 9–15 digit).";
       m.className = "msg err"; return;
     }
-    if (S && S.p < 50) {
+    const amount = (wdAmt === "all") ? (S ? S.p : 0) : wdAmt;
+    if (S && amount < 50) {
       m.textContent = "Saldo belum cukup — minimum tarik 50 poin.";
       m.className = "msg err"; return;
     }
-    tg.showConfirm("Tarik semua saldo (" + (S ? S.p : "?") + " poin) ke DANA " + dana + "?", ok => {
-      if (ok) tg.sendData(JSON.stringify({ a: "wd", dana: dana }));
+    if (S && amount > S.p) {
+      m.textContent = "Jumlahnya melebihi saldo kamu.";
+      m.className = "msg err"; return;
+    }
+    tg.showConfirm("Tarik " + amount + " poin ke DANA " + dana + "?", ok => {
+      if (ok) tg.sendData(JSON.stringify({ a: "wd", dana: dana, amt: wdAmt }));
     });
   };
   render();
