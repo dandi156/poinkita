@@ -586,8 +586,12 @@
       m.textContent = "Jumlahnya melebihi saldo kamu.";
       m.className = "msg err"; return;
     }
-    tg.showConfirm("Tarik " + amount + " poin ke DANA " + dana + "?", ok => {
-      if (ok) tg.sendData(JSON.stringify({ a: "wd", dana: dana, amt: wdAmt }));
+    tg.showConfirm("Tarik " + amount + " poin (Rp" + amount + ") ke DANA " + dana + "?\nPoin langsung kepotong dan pengajuan langsung masuk ke admin.", ok => {
+      if (ok) {
+        tg.sendData(JSON.stringify({ a: "wd", dana: dana, amt: wdAmt }));
+        m.textContent = "✅ Pengajuan terkirim! Penarikanmu lagi diproses admin — bukti & statusnya bot kirim di chat.";
+        m.className = "msg ok";
+      }
     });
   };
   render();
