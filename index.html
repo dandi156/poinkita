@@ -44,6 +44,14 @@
     </div>
   </div>
 
+  <div class="card" id="gate" style="display:none">
+    <h2>👋 Satu langkah lagi</h2>
+    <p class="small" style="font-size:14px">Kamu lagi buka aplikasi dari <b>link langsung</b>. Di mode ini Telegram gak ngirim data saldo kamu, jadi tombol-tombolnya mati.</p>
+    <p class="small" style="font-size:14px">Buka lewat chat bot, terus pencet tombol besar <b>🌐 Buka Aplikasi</b> di bagian bawah chat — di situ saldo &amp; semua tombolnya jalan 👇</p>
+    <button class="btn btn-gold" id="btn-goto-bot">💬 Buka Chat Bot</button>
+  </div>
+
+  <div id="app">
   <div class="card">
     <div class="saldo-label">💰 Saldo poin kamu</div>
     <div class="saldo-big" id="poin">–</div>
@@ -96,6 +104,7 @@
     4️⃣ Tonton iklan video: +5 poin/video (maks 5x/hari)<br>
     5️⃣ Kumpulin sampai ≥ 50 poin, terus tarik ke DANA.</p>
   </div>
+  </div>
 
 <script>
   const tg = window.Telegram.WebApp;
@@ -114,14 +123,8 @@
     if (!S) {
       const u = (tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
       $("hello").textContent = u ? ("Halo, " + (u.first_name || "teman") + " 👋") : "Halo 👋";
-      $("poin").textContent = "–";
-      $("rp").textContent = "Buka lewat tombol 🌐 Buka Aplikasi di chat bot ya — di situ saldo & semua tombolnya jalan 🙏";
-      $("refcount").textContent = "–";
-      $("reflink").textContent = "Link referral kamu ada di aplikasi (buka dari chat bot).";
-      $("btn-checkin").disabled = true;
-      $("btn-wd").disabled = true;
-      $("btn-ad").disabled = true;
-      renderTasks();
+      $("app").style.display = "none";
+      $("gate").style.display = "block";
       return;
     }
     $("hello").textContent = "Halo, " + (S.fn || "teman") + " 👋";
@@ -204,6 +207,11 @@
       box.appendChild(row);
     });
   }
+  $("btn-goto-bot").onclick = () => {
+    try { tg.openTelegramLink("https://t.me/PoinKitaBot"); }
+    catch (e) { location.href = "https://t.me/PoinKitaBot"; }
+  };
+
   $("btn-checkin").onclick = () => {
     const m = $("msg-checkin");
     m.textContent = "⏳ Ngirim ke bot…"; m.className = "msg";
