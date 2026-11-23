@@ -8,31 +8,39 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-         background:radial-gradient(700px 300px at 88% -5%, rgba(245,185,33,.16), rgba(245,185,33,0) 60%),
-                    radial-gradient(900px 480px at 50% -8%, #0f523a 0%, #06231c 58%) fixed, #06231c;
-         color:#eafff5; min-height:100vh; padding:16px 16px 100px; }
-  .head { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+         background:radial-gradient(700px 300px at 88% -5%, rgba(245,185,33,.18), rgba(245,185,33,0) 60%),
+                    radial-gradient(520px 260px at 8% 108%, rgba(20,120,80,.20), rgba(20,120,80,0) 60%),
+                    radial-gradient(900px 480px at 50% -8%, #10513a 0%, #05231b 58%) fixed, #05231b;
+         color:#eafff5; min-height:100vh; padding:16px 16px 104px; }
+  .head { display:flex; align-items:center; gap:12px; margin-bottom:16px; padding-bottom:14px;
+          border-bottom:1px solid rgba(245,185,33,.16); }
   .head img { width:52px; height:52px; border-radius:50%; border:2px solid #f5b921;
               box-shadow:0 0 0 4px rgba(245,185,33,.18), 0 4px 14px rgba(0,0,0,.45); }
   .head h1 { font-size:20px; }
   .head p { font-size:13px; color:#9fd8c0; }
-  .card { background:linear-gradient(180deg, #0d3d2c, #092b1f); border:1px solid #17603f;
-          border-radius:18px; padding:16px; margin-bottom:14px;
-          box-shadow:0 10px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+  .card { background:linear-gradient(180deg, #0e4130, #082a1f); border:1px solid #1d6c47;
+          border-radius:20px; padding:18px; margin-bottom:16px;
+          box-shadow:0 12px 28px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
           animation:cardin .45s cubic-bezier(.2,.8,.25,1) both; }
+  .card.hero { background:radial-gradient(340px 150px at 85% 0%, rgba(245,185,33,.20), rgba(245,185,33,0) 65%),
+               linear-gradient(180deg, #0f4a34, #082a1f);
+               border-color:rgba(245,185,33,.45);
+               box-shadow:0 14px 32px rgba(0,0,0,.42), 0 0 24px rgba(245,185,33,.10), inset 0 1px 0 rgba(255,255,255,.07); }
   .tabpage .card:nth-child(2) { animation-delay:.06s; }
   .tabpage .card:nth-child(3) { animation-delay:.12s; }
   .tabpage .card:nth-child(4) { animation-delay:.18s; }
   .tabpage .card:nth-child(5) { animation-delay:.24s; }
   @keyframes cardin { from { opacity:0; transform:translateY(14px) scale(.98); } to { opacity:1; transform:none; } }
-  .card h2 { color:#ffd964; }
+  .card h2 { color:#ffd964; letter-spacing:.2px; }
+  .card h2::after { content:""; display:block; width:36px; height:3px; border-radius:2px; margin-top:7px;
+                    background:linear-gradient(90deg, #f5b921, rgba(245,185,33,0)); }
   .saldo-label { font-size:13px; color:#9fd8c0; }
-  .saldo-big { font-size:40px; font-weight:800; line-height:1.1; letter-spacing:.5px;
+  .saldo-big { font-size:44px; font-weight:800; line-height:1.1; letter-spacing:.5px;
                background:linear-gradient(180deg, #ffdf6b, #f0a90a);
                -webkit-background-clip:text; background-clip:text; color:transparent;
                filter:drop-shadow(0 2px 10px rgba(245,185,33,.35)); }
   .saldo-rp { font-size:15px; color:#eafff5; }
-  .btn { display:block; width:100%; border:none; border-radius:12px; padding:14px;
+  .btn { display:block; width:100%; border:none; border-radius:14px; padding:14px;
          font-size:16px; font-weight:700; cursor:pointer; margin-top:12px;
          transition:transform .08s ease, filter .15s ease; box-shadow:0 4px 14px rgba(0,0,0,.3); }
   .btn:active { transform:scale(.98); }
@@ -60,7 +68,7 @@
   .wheelpin { text-align:center; font-size:20px; margin-bottom:-10px; position:relative; z-index:2; }
   .wheel { width:170px; height:170px; border-radius:50%; margin:12px auto; position:relative;
            border:6px solid #f5b921; box-shadow:0 0 22px rgba(245,185,33,.3), inset 0 0 24px rgba(0,0,0,.5);
-           background:conic-gradient(#e74c3c 0 60deg, #f39c12 60deg 120deg, #27ae60 120deg 180deg, #2980b9 180deg 240deg, #8e44ad 240deg 300deg, #ffd23c 300deg 360deg);
+           background:conic-gradient(#d64541 0 60deg, #e8a13a 60deg 120deg, #2fbf71 120deg 180deg, #2d7dd2 180deg 240deg, #7d4fc9 240deg 300deg, #ffd23c 300deg 360deg);
            transition:transform 2.6s cubic-bezier(.15,.9,.25,1); }
   .wheel::after { content:"🎁"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:34px; }
   .dieface { text-align:center; font-size:56px; margin:8px 0 12px; }
@@ -69,22 +77,25 @@
   .reels { display:flex; justify-content:center; gap:10px; margin:14px 0 2px; }
   .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:50; display:flex; gap:6px;
             padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-            background:rgba(4,23,15,.92); backdrop-filter:blur(8px); border-top:1px solid #17603f; }
-  .tabbtn { flex:1; border:1px solid #17603f; background:#0a2f22; color:#9fd8c0; border-radius:12px;
-            padding:10px 2px; font-size:12.5px; font-weight:700; cursor:pointer; }
-  .tabbtn.on { background:linear-gradient(180deg, #ffc93c, #efa706); color:#231a00; border-color:#f5b921; }
+            background:rgba(3,18,12,.94); backdrop-filter:blur(10px); border-top:1px solid rgba(245,185,33,.25); }
+  .tabbtn { flex:1; border:1px solid transparent; background:transparent; color:#9fd8c0; border-radius:999px;
+            padding:10px 2px; font-size:12.5px; font-weight:700; cursor:pointer; transition:all .15s ease; }
+  .tabbtn.on { background:linear-gradient(180deg, #ffc93c, #efa706); color:#231a00;
+               box-shadow:0 4px 16px rgba(245,185,33,.35); }
   .tabpage { animation:fadein .18s ease; }
   @keyframes fadein { from { opacity:0; } to { opacity:1; } }
   .reel { width:74px; height:74px; display:flex; align-items:center; justify-content:center;
           font-size:38px; background:#04170f; border:2px solid #f5b921; border-radius:14px;
           box-shadow:inset 0 5px 12px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.3); }
-  .btn-ghost { background:transparent; border:1px solid #2b7a57; color:#9fd8c0; }
-  .row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; font-size:14px; }
+  .btn-ghost { background:rgba(255,255,255,.03); border:1px solid #2b7a57; color:#c9f2e2; }
+  .row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:14px;
+         border-bottom:1px solid rgba(159,216,192,.07); }
   .row b { color:#f5b921; }
-  .link-box { background:#06231c; border:1px dashed #2b7a57; border-radius:10px; padding:10px;
+  .link-box { background:rgba(0,0,0,.28); border:1px dashed #2b7a57; border-radius:12px; padding:10px;
               font-size:12.5px; word-break:break-all; color:#9fd8c0; margin-top:8px; }
-  input { width:100%; background:#06231c; border:1px solid #2b7a57; border-radius:10px;
+  input { width:100%; background:rgba(0,0,0,.28); border:1px solid #2b7a57; border-radius:12px;
           padding:12px; color:#eafff5; font-size:16px; margin-top:10px; }
+  input:focus { outline:none; border-color:#f5b921; box-shadow:0 0 0 3px rgba(245,185,33,.18); }
   .msg { font-size:13.5px; margin-top:10px; min-height:18px; }
   .ok { color:#7be495; } .err { color:#ff9c9c; }
   .small { font-size:12px; color:#9fd8c0; margin-top:8px; line-height:1.5; }
@@ -117,7 +128,7 @@
 
   <div id="app">
   <div class="tabpage" id="tab-home">
-  <div class="card">
+  <div class="card hero">
     <div class="saldo-label">💰 Saldo poin kamu</div>
     <div class="saldo-big" id="poin">–</div>
     <div class="saldo-rp" id="rp"></div>
@@ -140,6 +151,13 @@
     <h2>🏆 Pengajak Terbanyak</h2>
     <div id="lblist"></div>
     <p class="small">Papan peringkat pengajak teman terbanyak. Rebut posisi puncaknya! 👑</p>
+  </div>
+
+  <div class="card">
+    <h2>🆘 CS / Bantuan Admin</h2>
+    <p class="small" style="font-size:13.5px">Ada kendala saldo, penarikan, atau tugas? Chat langsung sama admin lewat bot — admin balas di chat bot kamu.</p>
+    <button class="btn btn-gold" id="btn-cs">💬 Chat CS Admin</button>
+    <div class="msg" id="msg-cs"></div>
   </div>
 
   <div class="card">
@@ -362,6 +380,11 @@
       box.appendChild(row);
     });
   }
+  $("btn-cs").onclick = () => {
+    tg.sendData(JSON.stringify({ a: "cs" }));
+    $("msg-cs").textContent = "💬 Bot bakal minta pesanmu di chat — cek chat bot ya!";
+  };
+
   $("btn-checkin").onclick = () => {
     const m = $("msg-checkin");
     m.textContent = "⏳ Ngirim ke bot…"; m.className = "msg";
