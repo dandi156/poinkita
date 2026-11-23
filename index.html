@@ -136,12 +136,16 @@
     if (!S) return;
     const opts = [50, 50000, 100000];
     opts.forEach(v => {
-      if (v > S.p) return;
+      const afford = v <= S.p;
       const c = document.createElement("button");
-      c.className = "btn " + (wdAmt === v ? "btn-gold" : "btn-ghost");
+      c.className = "btn " + (wdAmt === v && afford ? "btn-gold" : "btn-ghost");
       c.style.width = "auto"; c.style.marginTop = "0"; c.style.padding = "10px 14px";
       c.textContent = fmtRp(v);
-      c.onclick = () => { wdAmt = v; $("amt-label").textContent = fmtRp(v); renderAmts(); };
+      if (!afford) {
+        c.disabled = true; c.style.opacity = "0.35"; c.style.cursor = "not-allowed";
+      } else {
+        c.onclick = () => { wdAmt = v; $("amt-label").textContent = fmtRp(v); renderAmts(); };
+      }
       box.appendChild(c);
     });
     const all = document.createElement("button");
